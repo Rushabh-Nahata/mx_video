@@ -1,0 +1,254 @@
+name: mx_video
+description: "MX Video — Fast, ad-free local video and audio player with offline P2P file transfer."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.1
+  flutter: ">=3.32.0"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DEPENDENCIES
+# ─────────────────────────────────────────────────────────────────────────────
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── Navigation ─────────────────────────────────────────────────────────────
+  # Declarative, type-safe routing with deep-link and shell-route support.
+  # Used for bottom-nav shell, nested routes (library → folder → player).
+  go_router: ^17.3.0
+
+  # ── State Management ───────────────────────────────────────────────────────
+  # Core Riverpod runtime. All providers (AsyncNotifier, StreamProvider, etc.)
+  # are consumed through this package. Chosen over BLoC/Provider for its
+  # compile-time safety and first-class async support.
+  flutter_riverpod: ^3.3.1
+
+  # Annotations used by @riverpod code-generation (e.g. @riverpod, @Riverpod).
+  # Kept in main dependencies because generated code imports it at runtime.
+  riverpod_annotation: ^4.0.2
+
+  # ── Database ───────────────────────────────────────────────────────────────
+  # Type-safe SQLite ORM with reactive streams, migrations, and DAOs.
+  # Stores media index, folder hierarchy, playlists, and transfer job history.
+  drift: ^2.33.0
+
+  # Provides the platform-specific SQLite database factory for Drift.
+  # Handles database file location on Android and iOS automatically.
+  drift_flutter: ^0.3.0
+
+  # ── Video & Audio Playback ─────────────────────────────────────────────────
+  # Cross-platform media player built on libmpv. Supports virtually every
+  # container and codec (MKV, MP4, AVI, HEVC, AV1, etc.) without extra setup.
+  media_kit: ^1.2.6
+
+  # Flutter widget layer for media_kit — provides the Video() widget,
+  # full-screen support, aspect-ratio handling, and subtitle rendering.
+  media_kit_video: ^2.0.1
+
+  # Prebuilt libmpv native libraries for Android. Required at runtime —
+  # without this, media_kit has no native decoder on Android.
+  media_kit_libs_android_video: ^1.3.8
+
+  # Prebuilt libmpv native libraries for iOS. Required at runtime —
+  # without this, media_kit has no native decoder on iOS.
+  media_kit_libs_ios_video: ^1.1.4
+
+  # Background audio playback with OS media session integration.
+  # Provides lock-screen controls, notification player, and headset button
+  # handling for the audio player feature.
+  audio_service: ^0.18.18
+
+  # ── File System & Permissions ──────────────────────────────────────────────
+  # Unified permission request API across Android and iOS.
+  # Used for: READ_EXTERNAL_STORAGE, MANAGE_EXTERNAL_STORAGE (Android 13+),
+  # local network access (iOS), and notification permissions.
+  permission_handler: ^12.0.3
+
+  # Resolves platform-specific directories: application documents, cache,
+  # and external storage. Used for thumbnail cache, DB path, and download dir.
+  path_provider: ^2.1.5
+
+  # Native file/folder picker dialog. Used as a fallback entry point for
+  # adding media folders when the user wants to browse outside the default path.
+  file_picker: 12.0.0-beta.1
+
+  # Dart-native path manipulation (join, basename, extension, relative).
+  # Keeps path logic readable and cross-platform without string hacks.
+  path: ^1.9.1
+
+  # ── Networking — Transfer Server ───────────────────────────────────────────
+  # Lightweight Dart HTTP server that runs inside the app during file transfers.
+  # Serves chunked file streams with Range-request (resume) support.
+  shelf: ^1.4.2
+
+  # Route-builder middleware for shelf. Maps HTTP verbs and path parameters
+  # to handler functions (e.g., GET /file, POST /handshake).
+  shelf_router: ^1.1.4
+
+  # HTTP client for outgoing file transfers and the handshake request.
+  # Chosen for its interceptor chain, progress callbacks, and cancel tokens.
+  dio: ^5.9.2
+
+  # Native mDNS (Bonjour / NSD) peer discovery and advertising.
+  # Wraps platform APIs for zero-config service registration and browsing.
+  # Replaces multicast_dns for reliable bidirectional discovery.
+  bonsoir: ^5.1.0
+
+  # Bluetooth Low Energy scanning for proximity-based peer discovery.
+  # Finds nearby MX Video devices even without a shared WiFi network.
+  # Supports Android, iOS, macOS, Windows, and Linux.
+  flutter_blue_plus: ^1.35.0
+
+  # QR code generation for manual peer pairing.
+  # Encodes device IP, port, name, and session token into a scannable code.
+  qr_flutter: ^4.1.0
+
+  # Camera-based QR code scanning using ML Kit (Android/iOS) and ZXing (desktop).
+  # Used to scan a peer's pairing QR code for instant connection.
+  mobile_scanner: ^7.0.0
+
+  # Reads device model and name for peer identification.
+  # Provides a human-readable device name shown during discovery.
+  device_info_plus: ^13.1.0
+
+  # Monitors network connectivity state (WiFi, mobile, none).
+  # Used to auto-select the best transfer method and detect disconnections.
+  connectivity_plus: ^6.1.0
+
+  # Reads the device's current WiFi SSID and local IPv4 address.
+  # Used to bind the transfer server to the correct interface and display
+  # connection info to the user on the transfer screen.
+  network_info_plus: ^8.1.0
+
+  # ── Background Tasks ───────────────────────────────────────────────────────
+  # Schedules and runs Dart code in a background isolate (WorkManager on
+  # Android, BGTaskScheduler on iOS). Used for resuming queued transfers
+  # and media library rescans when the app is not in the foreground.
+  workmanager: ^0.9.0+3
+
+  # ── Thumbnail Generation ───────────────────────────────────────────────────
+  # Extracts a JPEG frame from a video file at a given timestamp.
+  # Thumbnails are generated lazily, cached on disk, and paths stored in Drift.
+  video_thumbnail: ^0.5.6
+
+  # ── UI & Animations ────────────────────────────────────────────────────────
+  # Declarative animation library — used for player control fade-in/out,
+  # peer card entrance animations, and page transitions.
+  flutter_animate: ^4.5.2
+
+  # Shimmer loading skeleton effect shown while the media library scans
+  # or thumbnails are being generated.
+  shimmer: ^3.0.0
+
+  # Extended sliver widgets (SliverStack, MultiSliver) needed for complex
+  # scrollable layouts like the library grid with sticky section headers.
+  sliver_tools: ^0.2.12
+
+  # Keeps the screen awake during video playback. Without this, the OS
+  # dims and locks the display mid-movie.
+  wakelock_plus: ^1.6.1
+
+  # Sets screen brightness via gesture swipe (left-side drag in player).
+  # Restores the original brightness when the player exits.
+  screen_brightness: ^2.1.9
+
+  # Controls device media volume via gesture swipe (right-side drag in player).
+  # Mirrors the standard MX Player / VLC gesture UX.
+  volume_controller: ^3.6.0
+
+  # ── Serialization & Immutable Models ──────────────────────────────────────
+  # Runtime support for @freezed data classes (copyWith, pattern matching,
+  # equality). Used by all domain entities and transfer job models.
+  freezed_annotation: ^3.1.0
+
+  # Runtime annotations for json_serializable code generation.
+  # Used to serialize/deserialize settings, peer handshake payloads, and
+  # transfer metadata to/from JSON.
+  json_annotation: ^4.12.0
+
+  # ── Utilities ──────────────────────────────────────────────────────────────
+  # Simple key-value persistence for app settings: theme mode, last sort order,
+  # default playback speed, and scan root paths.
+  shared_preferences: ^2.5.5
+
+  # Structured, leveled logging (verbose → wtf). Output is color-coded in
+  # debug builds and silenced in release builds via a log filter.
+  logger: ^2.7.0
+
+  # SHA-256 checksum computation for verifying file integrity after transfer.
+  # Ensures the received file is bit-for-bit identical to the sent file.
+  crypto: ^3.0.7
+
+  # AES-256-GCM encryption for per-chunk transfer security.
+  # Pure Dart implementation — no native code, works on all platforms.
+  pointycastle: ^3.9.1
+
+  # Reactive stream composition utilities (BehaviorSubject, debounceTime,
+  # combineLatest). Used in TransferOrchestrator and search debouncing.
+  rxdart: ^0.28.0
+
+  # iOS-style icons from the Cupertino design system. Used in the iOS-themed
+  # variants of navigation items and alert dialogs.
+  cupertino_icons: ^1.0.8
+
+  # Picture-in-Picture support for Android. Enables the PiP button in the
+  # video player to minimise the player into a floating overlay window.
+  floating: ^6.0.0
+  share_plus: ^13.1.0
+  dart_cast: ^0.6.0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DEV DEPENDENCIES  (not included in release build)
+# ─────────────────────────────────────────────────────────────────────────────
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # Runs code generators (build_runner orchestrates all generators below).
+  build_runner: ^2.15.0
+
+  # Generates type-safe Riverpod providers from @riverpod annotations.
+  # Eliminates boilerplate Notifier/AsyncNotifier subclasses.
+  riverpod_generator: ^4.0.3
+
+  # Generates copyWith, equality, pattern-matching, and toString for
+  # @freezed classes. All domain entities and state classes use this.
+  freezed: ^3.2.5
+
+  # Drift code generator — produces .g.dart files for @DriftDatabase,
+  # @DriftAccessor, and table definitions.
+  drift_dev: ^2.33.0
+
+  # Generates fromJson / toJson for classes annotated with @JsonSerializable.
+  json_serializable: ^6.14.0
+
+  # Recommended lint rules — extends flutter_lints with stricter checks
+  # for dead code, unnecessary nullable types, and prefer_const_constructors.
+  flutter_lints: ^6.0.0
+
+  # Generates adaptive launcher icons for Android and iOS from a single source image.
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/mx icon.png"
+  adaptive_icon_background: "#29B6F6"
+  adaptive_icon_foreground: "assets/icons/mx icon.png"
+  min_sdk_android: 21
+  remove_alpha_ios: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FLUTTER CONFIG
+# ─────────────────────────────────────────────────────────────────────────────
+flutter:
+  uses-material-design: true
+
+  # assets: add files to assets/images/, assets/icons/, assets/animations/ first
+
+  assets:
+    - assets/icons/
+
+  # fonts: Inter files not bundled yet — using system font fallback
