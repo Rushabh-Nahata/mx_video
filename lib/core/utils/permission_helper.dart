@@ -11,8 +11,10 @@ class PermissionHelper {
   /// Handles Android 13+ granular media permissions and older STORAGE permission.
   static Future<bool> requestStoragePermission() async {
     if (Platform.isIOS) {
-      // iOS accesses files through the document picker — no explicit permission needed.
-      return true;
+      // iOS needs Photos permission to scan the Camera Roll for videos.
+      final status = await Permission.photos.request();
+      // Return true even for .limited — the native plugin handles both.
+      return status.isGranted || status.isLimited;
     }
 
     // Android 13+ uses granular permissions.

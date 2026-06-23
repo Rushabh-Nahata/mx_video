@@ -67,10 +67,19 @@ class SocketTransferServer {
   /// Start the socket server. Returns the bound port.
   Future<int> start() async {
     if (isRunning) return port;
-    _serverSocket = await ServerSocket.bind(
-      InternetAddress.anyIPv4,
-      0, // OS picks a free port
-    );
+    // Bind to IPv6 wildcard which also accepts IPv4 (dual-stack).
+    // Falls back to IPv4-only if the platform does not support dual-stack.
+    try {
+      _serverSocket = await ServerSocket.bind(
+        InternetAddress.anyIPv6,
+        0, // OS picks a free port
+      );
+    } on SocketException {
+      _serverSocket = await ServerSocket.bind(
+        InternetAddress.anyIPv4,
+        0, // OS picks a free port
+      );
+    }
     _serverSocket!.listen(
       _handleConnection,
       onError: (e) => _log.e('Socket server error: $e'),
@@ -127,6 +136,9 @@ class SocketTransferServer {
               return;
             }
 
+            // Use the sender's chunk size if provided (protocol negotiation).
+            final negotiatedChunkSize = req.chunkSize;
+
             // Set up session.
             final saveDir = await _resolveDownloadDir();
             final session = _ActiveSession(token: req.token);
@@ -137,6 +149,7 @@ class SocketTransferServer {
               final mgr = ChunkManager(
                 filePath: savePath,
                 fileSize: entry.fileSize,
+                chunkSize: negotiatedChunkSize,
               );
               final bitmap = await mgr.loadOrCreateBitmap(partialPath);
 
@@ -157,11 +170,15 @@ class SocketTransferServer {
 
             _activeReceives[req.token] = session;
 
-            // Reply with bitmaps.
+            // Reply with bitmaps and negotiated parameters.
             final bitmaps =
                 session.files.map((f) => f.bitmap.toBytes()).toList();
             final ack = TransferProtocol.encodeHandshakeAck(
-                accepted: true, bitmaps: bitmaps);
+              accepted: true,
+              bitmaps: bitmaps,
+              chunkSize: negotiatedChunkSize,
+              protocolVersion: req.protocolVersion,
+            );
             socket.add(TransferProtocol.encodeFrame(
                 TransferProtocol.handshakeAck, ack));
             await socket.flush();

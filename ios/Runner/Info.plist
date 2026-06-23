@@ -9,6 +9,10 @@
 	<string>MX Video needs permission to save received files to your Photo Library.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>MX Video uses your local network to discover nearby devices for offline file transfer.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>MX Video uses Bluetooth to discover nearby devices for file transfer when devices are not on the same WiFi network.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>MX Video uses Bluetooth to advertise this device so nearby devices can find it for file transfer.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_mxvideo._tcp</string>

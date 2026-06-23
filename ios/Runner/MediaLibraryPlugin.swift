@@ -45,6 +45,9 @@ import UIKit
 
     // MARK: – Video query (PHPhotoLibrary + Documents)
 
+    /// Serial queue that protects all mutable result arrays from concurrent access.
+    private let resultLock = DispatchQueue(label: "com.mxvideo.mediaplugin.lock")
+
     private func queryAllVideos(result: @escaping FlutterResult) {
         var all: [[String: Any?]] = []
 
@@ -58,14 +61,14 @@ import UIKit
                 mimePrefix: "video/",
                 validExtensions: ["mp4", "mkv", "mov", "avi", "m4v", "wmv", "flv", "3gp", "webm"]
             )
-            all.append(contentsOf: docs)
+            self.resultLock.sync { all.append(contentsOf: docs) }
             group.leave()
         }
 
         // 2. PHPhotoLibrary Camera Roll
         group.enter()
         fetchPhotoLibraryVideos { items in
-            all.append(contentsOf: items)
+            self.resultLock.sync { all.append(contentsOf: items) }
             group.leave()
         }
 
@@ -144,7 +147,7 @@ import UIKit
                 let fileSize = self.fileSize(at: path)
                 let durationMs = Int((asset.duration.seconds * 1_000).rounded())
 
-                results.append([
+                let entry: [String: Any?] = [
                     "path": path,
                     "name": urlAsset.url.lastPathComponent,
                     "extension": ext,
@@ -158,7 +161,9 @@ import UIKit
                         (asset.creationDate?.timeIntervalSince1970 ?? 0) * 1_000
                     ),
                     "mimeType": "video/\(ext)",
-                ])
+                ]
+                // Synchronize — requestAVAsset callbacks fire on arbitrary threads.
+                self.resultLock.sync { results.append(entry) }
             }
         }
 

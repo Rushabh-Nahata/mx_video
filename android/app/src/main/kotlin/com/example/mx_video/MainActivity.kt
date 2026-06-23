@@ -8,5 +8,7 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         // Register the MediaStore plugin for video/audio scanning.
         flutterEngine.plugins.add(MediaStorePlugin())
+        // Register the BLE advertiser plugin for cross-platform device discovery.
+        flutterEngine.plugins.add(BleAdvertiserPlugin())
     }
 }

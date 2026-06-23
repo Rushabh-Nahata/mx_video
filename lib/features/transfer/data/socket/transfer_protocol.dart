@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import '../../../../core/constants/app_constants.dart';
+
 /// Binary protocol for socket-based file transfer.
 ///
 /// Frame layout (big-endian):
@@ -41,22 +43,34 @@ class TransferProtocol {
 
   // ── Payload helpers ───────────────────────────────────────────────────────
 
-  /// Encode a handshake request: session token + file manifest.
+  /// Current protocol version. Bump when making breaking changes.
+  static const int currentProtocolVersion = 2;
+
+  /// Encode a handshake request: session token + file manifest + negotiation.
   static Uint8List encodeHandshakeReq({
     required String token,
     required List<FileManifestEntry> files,
     required bool encrypted,
+    int? chunkSize,
+    int? protocolVersion,
   }) {
     final map = {
       'token': token,
       'encrypted': encrypted,
       'files': files.map((f) => f.toMap()).toList(),
+      'protocolVersion': protocolVersion ?? currentProtocolVersion,
+      'chunkSize': chunkSize ?? AppConstants.transferChunkBytes,
     };
     return Uint8List.fromList(utf8.encode(jsonEncode(map)));
   }
 
-  static ({String token, List<FileManifestEntry> files, bool encrypted})
-      decodeHandshakeReq(Uint8List payload) {
+  static ({
+    String token,
+    List<FileManifestEntry> files,
+    bool encrypted,
+    int protocolVersion,
+    int chunkSize,
+  }) decodeHandshakeReq(Uint8List payload) {
     final map = jsonDecode(utf8.decode(payload)) as Map<String, dynamic>;
     return (
       token: map['token'] as String,
@@ -64,29 +78,41 @@ class TransferProtocol {
       files: (map['files'] as List)
           .map((e) => FileManifestEntry.fromMap(e as Map<String, dynamic>))
           .toList(),
+      protocolVersion: map['protocolVersion'] as int? ?? 1,
+      chunkSize: map['chunkSize'] as int? ?? AppConstants.transferChunkBytes,
     );
   }
 
-  /// Encode a handshake ACK: accepted + chunk bitmaps per file.
+  /// Encode a handshake ACK: accepted + chunk bitmaps per file + negotiated params.
   static Uint8List encodeHandshakeAck({
     required bool accepted,
     required List<Uint8List> bitmaps,
+    int? chunkSize,
+    int? protocolVersion,
   }) {
     final map = {
       'accepted': accepted,
       'bitmaps': bitmaps.map((b) => base64Encode(b)).toList(),
+      'protocolVersion': protocolVersion ?? currentProtocolVersion,
+      'chunkSize': chunkSize ?? AppConstants.transferChunkBytes,
     };
     return Uint8List.fromList(utf8.encode(jsonEncode(map)));
   }
 
-  static ({bool accepted, List<Uint8List> bitmaps}) decodeHandshakeAck(
-      Uint8List payload) {
+  static ({
+    bool accepted,
+    List<Uint8List> bitmaps,
+    int protocolVersion,
+    int chunkSize,
+  }) decodeHandshakeAck(Uint8List payload) {
     final map = jsonDecode(utf8.decode(payload)) as Map<String, dynamic>;
     return (
       accepted: map['accepted'] as bool,
       bitmaps: (map['bitmaps'] as List)
           .map((b) => base64Decode(b as String))
           .toList(),
+      protocolVersion: map['protocolVersion'] as int? ?? 1,
+      chunkSize: map['chunkSize'] as int? ?? AppConstants.transferChunkBytes,
     );
   }
 
@@ -193,7 +219,9 @@ class FrameReader {
 
   final Socket _socket;
   final _buffer = BytesBuilder(copy: false);
-  final _controller = StreamController<({int type, Uint8List payload})>();
+  // Broadcast so the client can call .where().first multiple times
+  // (handshake, chunk ACKs, file verified) without StateError.
+  final _controller = StreamController<({int type, Uint8List payload})>.broadcast();
   StreamSubscription<Uint8List>? _sub;
 
   Stream<({int type, Uint8List payload})> get frames => _controller.stream;
@@ -204,7 +232,7 @@ class FrameReader {
         _buffer.add(data);
         _processBuffer();
       },
-      onError: (e) => _controller.addError(e),
+      onError: (Object e) => _controller.addError(e),
       onDone: () => _controller.close(),
     );
   }

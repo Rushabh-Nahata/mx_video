@@ -203,10 +203,25 @@ class TransferRepositoryImpl implements TransferRepository {
       socketPort = peer.port;
     }
 
+    // Filter to only accessible files before creating jobs.
+    final accessiblePaths = <String>[];
     for (final path in filePaths) {
       final file = File(path);
-      if (!await file.exists()) continue;
+      if (await file.exists()) {
+        accessiblePaths.add(path);
+      } else {
+        _log.w('File not accessible, skipping: $path');
+      }
+    }
 
+    if (accessiblePaths.isEmpty) {
+      throw Exception(
+          'None of the selected files are accessible. '
+          'On iOS, ensure Photos permission is granted.');
+    }
+
+    for (final path in accessiblePaths) {
+      final file = File(path);
       final fileName = p.basename(path);
       final fileSize = await file.length();
       final totalChunks =
@@ -243,11 +258,11 @@ class TransferRepositoryImpl implements TransferRepository {
       jobs.add(job);
     }
 
-    // Enqueue all files as a single transfer batch.
+    // Enqueue all accessible files as a single transfer batch.
     _queue.enqueue(QueuedTransfer(
       jobId: jobs.first.id,
       peer: peer,
-      filePaths: filePaths,
+      filePaths: accessiblePaths,
       direction: TransferDirection.send,
       socketPort: socketPort,
       sessionToken: token,

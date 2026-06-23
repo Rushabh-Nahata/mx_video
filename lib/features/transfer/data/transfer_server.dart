@@ -98,11 +98,21 @@ class TransferServer {
         .addMiddleware(_corsMiddleware())
         .addHandler(router.call);
 
-    _server = await shelf_io.serve(
-      handler,
-      InternetAddress.anyIPv4,
-      AppConstants.transferServerPort,
-    );
+    // Bind to IPv6 wildcard which also accepts IPv4 connections (dual-stack).
+    // Falls back to IPv4-only if the platform does not support dual-stack.
+    try {
+      _server = await shelf_io.serve(
+        handler,
+        InternetAddress.anyIPv6,
+        AppConstants.transferServerPort,
+      );
+    } on SocketException {
+      _server = await shelf_io.serve(
+        handler,
+        InternetAddress.anyIPv4,
+        AppConstants.transferServerPort,
+      );
+    }
     _server!.autoCompress = false; // videos are already compressed
 
     _log.i('Transfer server started on port ${_server!.port}');

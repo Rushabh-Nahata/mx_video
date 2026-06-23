@@ -139,10 +139,15 @@ class TransferQueue {
       final socketPort = transfer.socketPort ?? transfer.peer.port;
       await client.connect(transfer.peer.ipAddress, socketPort);
 
-      // Build file manifest.
+      // Build file manifest — skip files that are no longer accessible.
       final manifest = <FileManifestEntry>[];
+      final validPaths = <String>[];
       for (final path in transfer.filePaths) {
         final file = File(path);
+        if (!await file.exists()) {
+          _log.w('File not accessible during transfer, skipping: $path');
+          continue;
+        }
         final fileSize = await file.length();
         final checksum = await _computeChecksum(path);
         manifest.add(FileManifestEntry(
@@ -150,6 +155,11 @@ class TransferQueue {
           fileSize: fileSize,
           checksum: checksum,
         ));
+        validPaths.add(path);
+      }
+
+      if (manifest.isEmpty) {
+        throw Exception('No accessible files to transfer');
       }
 
       // Handshake — get chunk bitmaps for resume.
@@ -171,7 +181,7 @@ class TransferQueue {
 
       // Send all files.
       final result = await client.sendFiles(
-        filePaths: transfer.filePaths,
+        filePaths: validPaths,
         manifest: manifest,
         bitmaps: bitmaps,
         encryption: encryption,
