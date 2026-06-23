@@ -165,19 +165,27 @@ class TransferManager extends _$TransferManager {
   /// Send a single file to a peer.
   Future<void> sendFile(PeerDevice peer, String filePath) async {
     state = const AsyncLoading();
-    final repo = await ref.read(transferRepositoryProvider.future);
-    state = await AsyncValue.guard(
-      () => repo.sendFile(peer, filePath).then((_) {}),
-    );
+    try {
+      final repo = await ref.read(transferRepositoryProvider.future);
+      await repo.sendFile(peer, filePath);
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
   }
 
   /// Send multiple files to a peer.
   Future<void> sendFiles(PeerDevice peer, List<String> filePaths) async {
     state = const AsyncLoading();
-    final repo = await ref.read(transferRepositoryProvider.future);
-    state = await AsyncValue.guard(
-      () => repo.sendFiles(peer, filePaths).then((_) {}),
-    );
+    try {
+      final repo = await ref.read(transferRepositoryProvider.future);
+      await repo.sendFiles(peer, filePaths);
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
   }
 
   /// Connect to a peer from QR scan data.

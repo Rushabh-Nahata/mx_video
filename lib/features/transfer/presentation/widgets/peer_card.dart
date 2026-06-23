@@ -41,21 +41,36 @@ class PeerCard extends StatelessWidget {
             _ConnectionBadge(method: peer.connectionMethod),
           ],
         ),
-        subtitle: Text(
-          peer.ipAddress.isNotEmpty
-              ? peer.ipAddress
-              : _connectionMethodLabel(peer.connectionMethod),
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
+        subtitle: peer.ipAddress.isNotEmpty
+            ? Text(
+                peer.ipAddress,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              )
+            : Text(
+                peer.connectionMethod == ConnectionMethod.bluetooth
+                    ? 'Not on same WiFi — cannot transfer'
+                    : _connectionMethodLabel(peer.connectionMethod),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: peer.connectionMethod == ConnectionMethod.bluetooth
+                      ? AppColors.warning
+                      : AppColors.textSecondary,
+                ),
+              ),
         trailing: onSend != null
             ? FilledButton.icon(
-                icon: const Icon(Icons.send, size: 16),
-                label: const Text('Send'),
+                icon: Icon(
+                  peer.ipAddress.isEmpty ? Icons.wifi_off : Icons.send,
+                  size: 16,
+                ),
+                label: Text(peer.ipAddress.isEmpty ? 'No WiFi' : 'Send'),
                 onPressed: onSend,
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
+                  backgroundColor: peer.ipAddress.isEmpty
+                      ? AppColors.textSecondary
+                      : null,
                 ),
               )
             : const Icon(Icons.chevron_right),

@@ -33,6 +33,7 @@ class AppColors {
   static const Color success = Color(0xFF43A047);
   static const Color warning = Color(0xFFFB8C00);
   static const Color error = Color(0xFFE53935);
+  static const Color info = Color(0xFF29B6F6);
 
   // ── Player ─────────────────────────────────────────────────────────────────
   static const Color playerBackground = Color(0xFF000000);

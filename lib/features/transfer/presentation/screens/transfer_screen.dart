@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -99,7 +100,20 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
   Future<void> _openDiscovery(BuildContext context) async {
     final device = await context.push<PeerDevice>(RouteNames.discovery);
     if (!context.mounted || device == null) return;
-    await context.push(RouteNames.peerList, extra: <String>[]);
+    // Pick files first, then navigate to peer list with them.
+    final filePaths = await _pickFiles();
+    if (filePaths == null || filePaths.isEmpty) return;
+    if (!context.mounted) return;
+    await context.push(RouteNames.peerList, extra: filePaths);
+  }
+
+  Future<List<String>?> _pickFiles() async {
+    final result = await FilePicker.pickFiles(
+      allowMultiple: true,
+      type: FileType.any,
+    );
+    if (result == null) return null;
+    return result.paths.whereType<String>().toList();
   }
 
   void _showConnectionMethodSheet(BuildContext context) {
@@ -259,13 +273,160 @@ class _NearbyTab extends ConsumerWidget {
 
         return RefreshIndicator(
           onRefresh: () async => ref.invalidate(peersProvider),
-          child: ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: peers.length,
-            itemBuilder: (context, i) => PeerCard(peer: peers[i]),
+          child: Column(
+            children: [
+              // Connection requirements info banner.
+              const _ConnectionInfoBanner(),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: peers.length,
+                  itemBuilder: (context, i) => PeerCard(
+                    peer: peers[i],
+                    onSend: () => _onSendToPeer(context, ref, peers[i]),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },
+    );
+  }
+
+  Future<void> _onSendToPeer(
+      BuildContext context, WidgetRef ref, PeerDevice peer) async {
+    // Check if BLE-only peer without IP — can't transfer.
+    if (peer.ipAddress.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'This device was found via Bluetooth but is not on the same '
+            'WiFi network. Connect both devices to the same WiFi to transfer files.',
+          ),
+          duration: Duration(seconds: 5),
+        ),
+      );
+      return;
+    }
+
+    // Pick files to send.
+    final result = await FilePicker.pickFiles(
+      allowMultiple: true,
+      type: FileType.any,
+    );
+    if (result == null || result.paths.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No files selected')),
+        );
+      }
+      return;
+    }
+
+    final filePaths = result.paths.whereType<String>().toList();
+    if (filePaths.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No accessible files selected')),
+        );
+      }
+      return;
+    }
+
+    if (!context.mounted) return;
+
+    // Show sending indicator.
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Sending ${filePaths.length} file${filePaths.length > 1 ? 's' : ''} '
+          'to ${peer.name}...',
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    try {
+      await ref
+          .read(transferManagerProvider.notifier)
+          .sendFiles(peer, filePaths);
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Transfer to ${peer.name} started! Check History tab for progress.',
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      final message = _userFriendlyError(e.toString(), peer);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
+  String _userFriendlyError(String error, PeerDevice peer) {
+    final lower = error.toLowerCase();
+    if (lower.contains('connection refused') ||
+        lower.contains('connection timed out') ||
+        lower.contains('host unreachable') ||
+        lower.contains('no route to host') ||
+        lower.contains('socketexception')) {
+      return 'Cannot reach ${peer.name}. Make sure both devices are '
+          'connected to the same WiFi network and the app is open on '
+          'the other device.';
+    }
+    if (lower.contains('not accessible') || lower.contains('permission')) {
+      return 'Cannot access the selected files. Please check file permissions.';
+    }
+    if (lower.contains('rejected')) {
+      return 'Transfer was rejected by ${peer.name}.';
+    }
+    return 'Transfer failed: $error';
+  }
+}
+
+// ── Connection Info Banner ──────────────────────────────────────────────────
+
+class _ConnectionInfoBanner extends StatelessWidget {
+  const _ConnectionInfoBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.info.withAlpha(15),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.info.withAlpha(40)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, color: AppColors.info, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Both devices must be on the same WiFi network to transfer files. '
+              'Bluetooth is used for discovery only.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
