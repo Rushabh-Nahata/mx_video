@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_names.dart';
-import '../../../../shared/widgets/thumbnail_widget.dart';
-import '../../../../core/utils/file_size_formatter.dart';
 import '../../../../core/utils/duration_formatter.dart';
+import '../../../../core/utils/file_size_formatter.dart';
+import '../../../../shared/widgets/thumbnail_widget.dart';
 import '../../domain/entities/media_file.dart';
 import '../providers/library_provider.dart';
 

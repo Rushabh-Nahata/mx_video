@@ -4,7 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../data/repositories/browser_repository_impl.dart';
 import '../../data/sources/file_system_source.dart';
 import '../../domain/entities/file_node.dart';
-import '../../domain/entities/folder_node.dart';
+
 import '../../domain/repositories/browser_repository.dart';
 import '../../domain/usecases/list_directory.dart';
 import '../../domain/usecases/search_files.dart';

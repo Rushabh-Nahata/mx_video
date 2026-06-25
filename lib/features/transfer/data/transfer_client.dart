@@ -4,12 +4,9 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
-import 'package:logger/logger.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../domain/entities/peer_device.dart';
-
-final _log = Logger(printer: SimplePrinter());
 
 /// Progress callback for file upload.
 typedef TransferProgressCallback = void Function(

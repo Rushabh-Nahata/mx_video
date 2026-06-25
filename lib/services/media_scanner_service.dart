@@ -9,7 +9,7 @@ import 'package:workmanager/workmanager.dart';
 
 import '../core/constants/app_constants.dart';
 import '../core/database/app_database.dart';
-import '../core/database/tables/media_table.dart';
+
 import '../features/library/data/sources/android_media_store_source.dart';
 import '../features/library/data/sources/ios_media_source.dart';
 import '../features/library/data/sources/media_platform_source.dart';
@@ -65,7 +65,7 @@ void callbackDispatcher() {
 ///    for eager pre-generation. The rest are generated lazily when cells appear.
 ///
 class MediaScannerService {
-  MediaScannerService({required AppDatabase db}) : _db = db;
+  MediaScannerService({required AppDatabase this._db});
 
   final AppDatabase _db;
 
@@ -271,7 +271,7 @@ class MediaScannerService {
   static Future<void> registerBackgroundScan({
     List<String>? rootPaths,
   }) async {
-    await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
+    await Workmanager().initialize(callbackDispatcher);
     await Workmanager().registerPeriodicTask(
       _kBackgroundScanTask,
       _kBackgroundScanTask,

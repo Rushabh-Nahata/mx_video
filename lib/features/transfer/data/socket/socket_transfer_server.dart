@@ -2,12 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:crypto/crypto.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import 'chunk_manager.dart';
 import 'encryption_handler.dart';
 import 'transfer_protocol.dart';

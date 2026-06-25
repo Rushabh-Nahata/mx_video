@@ -94,7 +94,7 @@ class TransferServer {
       ..get('/resume-offset', _handleResumeOffset)
       ..post('/negotiate', _handleNegotiate);
 
-    final handler = Pipeline()
+    final handler = const Pipeline()
         .addMiddleware(_corsMiddleware())
         .addHandler(router.call);
 

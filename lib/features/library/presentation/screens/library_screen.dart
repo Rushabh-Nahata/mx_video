@@ -125,7 +125,7 @@ class LibraryScreen extends ConsumerWidget {
                 // ── Recently Played ──────────────────────────────────────
                 recentsAsync.when(
                   loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                  error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                  error: (_, _) => const SliverToBoxAdapter(child: SizedBox.shrink()),
                   data: (recents) {
                     if (recents.isEmpty) {
                       return const SliverToBoxAdapter(child: SizedBox.shrink());

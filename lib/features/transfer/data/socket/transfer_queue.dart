@@ -10,7 +10,6 @@ import '../../../../core/constants/app_constants.dart';
 import '../../domain/entities/peer_device.dart';
 import '../../domain/entities/transfer_job.dart';
 import 'encryption_handler.dart';
-import 'progress_tracker.dart';
 import 'socket_transfer_client.dart';
 import 'transfer_protocol.dart';
 

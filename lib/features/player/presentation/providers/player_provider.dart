@@ -74,7 +74,7 @@ class PlayerController extends _$PlayerController {
 
     // Cancel old subscriptions before adding new ones (for playlist transitions).
     for (final s in _subs) {
-      s.cancel();
+      unawaited(s.cancel());
     }
     _subs.clear();
 

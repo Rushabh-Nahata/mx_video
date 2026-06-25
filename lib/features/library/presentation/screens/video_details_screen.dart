@@ -16,7 +16,6 @@ class VideoDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
     final stat = File(file.absolutePath).statSync();
 
     return Scaffold(

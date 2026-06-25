@@ -9,7 +9,7 @@ const _kThemeKey = 'theme_mode';
 /// Persists and exposes the current [ThemeMode].
 /// Defaults to [ThemeMode.dark] on first launch.
 @riverpod
-class ThemeMode_ extends _$ThemeMode_ {
+class ThemeModeNotifier extends _$ThemeModeNotifier {
   @override
   ThemeMode build() {
     _load();
@@ -40,4 +40,4 @@ class ThemeMode_ extends _$ThemeMode_ {
 
 /// Convenience provider that exposes the current [ThemeMode] value.
 @riverpod
-ThemeMode themeModeValue(Ref ref) => ref.watch(themeMode_Provider);
+ThemeMode themeModeValue(Ref ref) => ref.watch(themeModeProvider);

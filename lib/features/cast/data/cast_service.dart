@@ -150,9 +150,9 @@ class AppCastService {
 
   /// Disconnect from the current device.
   Future<void> disconnect() async {
-    _stateSub?.cancel();
-    _posSub?.cancel();
-    _durSub?.cancel();
+    await _stateSub?.cancel();
+    await _posSub?.cancel();
+    await _durSub?.cancel();
 
     if (_session != null) {
       try {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,11 +18,11 @@ Future<void> main() async {
   MediaKit.ensureInitialized();
 
   // Non-blocking UI config — these don't need to complete before runApp.
-  SystemChrome.setPreferredOrientations([
+  unawaited(SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
-  ]);
+  ]));
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -42,5 +44,5 @@ Future<void> main() async {
   );
 
   // Deferred: WorkManager init doesn't need to block startup.
-  Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
+  unawaited(Workmanager().initialize(callbackDispatcher));
 }

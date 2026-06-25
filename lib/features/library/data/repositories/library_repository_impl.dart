@@ -1,8 +1,5 @@
-import 'package:drift/drift.dart' hide Column;
-
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/daos/media_dao.dart';
-import '../../../../core/database/tables/media_table.dart';
 import '../../../../services/media_scanner_service.dart';
 import '../../domain/entities/media_file.dart';
 import '../../domain/entities/media_folder.dart';
@@ -11,10 +8,9 @@ import '../../domain/repositories/library_repository.dart';
 
 class LibraryRepositoryImpl implements LibraryRepository {
   LibraryRepositoryImpl({
-    required MediaDao dao,
-    required AppDatabase db,
-  })  : _dao = dao,
-        _db = db;
+    required MediaDao this._dao,
+    required AppDatabase this._db,
+  });
 
   final MediaDao _dao;
   final AppDatabase _db;

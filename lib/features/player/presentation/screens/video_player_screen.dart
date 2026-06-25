@@ -14,7 +14,6 @@ import '../../../cast/data/cast_service.dart';
 import '../../../cast/presentation/widgets/cast_controls_overlay.dart';
 import '../../../cast/presentation/widgets/cast_device_picker.dart';
 import '../providers/player_provider.dart';
-import '../widgets/double_tap_seek_indicator.dart';
 import '../widgets/gesture_indicator.dart';
 import '../widgets/player_controls.dart';
 
@@ -360,7 +359,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen>
             if (_videoController != null)
               Video(
                 controller: _videoController!,
-                controls: NoVideoControls,
+                controls: null,
               )
             else
               const SizedBox.shrink(),

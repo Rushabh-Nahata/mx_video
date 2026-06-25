@@ -46,4 +46,4 @@ final class StorageInfoProvider
   }
 }
 
-String _$storageInfoHash() => r'7e89a5bfaf47f55354b35d32d62aaf4c77e97b7e';
+String _$storageInfoHash() => r'5b1ebf36c55cafb124a5ca9eadbec1afd4714644';

@@ -16,13 +16,13 @@ class AndroidMediaStoreSource implements MediaPlatformSource {
 
   @override
   Future<List<RawMediaItem>> queryVideos() async {
-    final raw = await _channel.invokeListMethod<Map>('queryVideos') ?? [];
+    final raw = await _channel.invokeListMethod<Map<dynamic, dynamic>>('queryVideos') ?? [];
     return raw.map((m) => RawMediaItem.fromMap(Map<String, dynamic>.from(m))).toList();
   }
 
   @override
   Future<List<RawMediaItem>> queryAudios() async {
-    final raw = await _channel.invokeListMethod<Map>('queryAudios') ?? [];
+    final raw = await _channel.invokeListMethod<Map<dynamic, dynamic>>('queryAudios') ?? [];
     return raw.map((m) => RawMediaItem.fromMap(Map<String, dynamic>.from(m))).toList();
   }
 

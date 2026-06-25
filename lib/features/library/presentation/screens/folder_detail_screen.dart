@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -175,10 +177,10 @@ class FolderDetailScreen extends ConsumerWidget {
             final dao = ref.read(mediaDaoProvider);
             final files = await dao.getFilesByIds(selection.toList());
             if (context.mounted) {
-              context.push(
+              unawaited(context.push(
                 RouteNames.peerList,
                 extra: files.map((f) => f.absolutePath).toList(),
-              );
+              ));
             }
             ref.read(selectionProvider.notifier).clear();
           },

@@ -29,7 +29,7 @@ class SettingsScreen extends ConsumerWidget {
               subtitle: const Text('Use dark theme throughout the app'),
               value: settings.themeMode == 'dark',
               onChanged: (v) {
-                ref.read(themeMode_Provider.notifier).toggle();
+                ref.read(themeModeProvider.notifier).toggle();
                 ref.read(settingsProvider.notifier).save(
                       settings.copyWith(themeMode: v ? 'dark' : 'light'),
                     );

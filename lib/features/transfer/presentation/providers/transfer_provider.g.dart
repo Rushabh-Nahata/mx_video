@@ -536,7 +536,7 @@ final class TransferManagerProvider
   }
 }
 
-String _$transferManagerHash() => r'49d0bb09d05031f42658e69dd89f281eeb7e9f48';
+String _$transferManagerHash() => r'a7c875e0bc0f8c225c419f6fbb147f56c904e64b';
 
 abstract class _$TransferManager extends $Notifier<AsyncValue<void>> {
   AsyncValue<void> build();

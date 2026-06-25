@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../domain/entities/peer_device.dart';
 import '../providers/transfer_provider.dart';
 import '../widgets/peer_card.dart';
 
@@ -33,7 +34,7 @@ class PeerListScreen extends ConsumerWidget {
                 // Send files to the QR-connected peer.
                 await ref
                     .read(transferManagerProvider.notifier)
-                    .sendFiles(peer as dynamic, filePaths);
+                    .sendFiles(peer as PeerDevice, filePaths);
                 if (context.mounted) Navigator.of(context).pop();
               }
             },

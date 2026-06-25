@@ -2,8 +2,8 @@ import 'package:dart_cast/dart_cast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../providers/cast_provider.dart';
 import '../../data/cast_service.dart';
+import '../providers/cast_provider.dart';
 
 /// Bottom sheet that discovers and lists available cast devices.
 class CastDevicePicker extends ConsumerStatefulWidget {

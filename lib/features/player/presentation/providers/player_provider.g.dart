@@ -41,7 +41,7 @@ final class PlayerControllerProvider
   }
 }
 
-String _$playerControllerHash() => r'd21322fe52970c89428ef565bdb989e05bc80095';
+String _$playerControllerHash() => r'95af80e2dac6a2dee92a8e009a5539217e8953ab';
 
 abstract class _$PlayerController extends $Notifier<PlaybackState> {
   PlaybackState build();

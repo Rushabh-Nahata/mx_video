@@ -33,7 +33,7 @@ class ThumbnailQueue {
   final _queue = Queue<_ThumbnailRequest>();
   final _inFlight = <String, Future<String?>>{}; // path → future
   /// LRU memory cache: most-recently-used entries stay at the end.
-  final _cache = LinkedHashMap<String, String>();
+  final _cache = <String, String>{};
   int _active = 0;
   String? _cacheDir;
 

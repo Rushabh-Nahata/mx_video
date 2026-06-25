@@ -11,32 +11,32 @@ part of 'theme_provider.dart';
 /// Persists and exposes the current [ThemeMode].
 /// Defaults to [ThemeMode.dark] on first launch.
 
-@ProviderFor(ThemeMode_)
-final themeMode_Provider = ThemeMode_Provider._();
+@ProviderFor(ThemeModeNotifier)
+final themeModeProvider = ThemeModeNotifierProvider._();
 
 /// Persists and exposes the current [ThemeMode].
 /// Defaults to [ThemeMode.dark] on first launch.
-final class ThemeMode_Provider
-    extends $NotifierProvider<ThemeMode_, ThemeMode> {
+final class ThemeModeNotifierProvider
+    extends $NotifierProvider<ThemeModeNotifier, ThemeMode> {
   /// Persists and exposes the current [ThemeMode].
   /// Defaults to [ThemeMode.dark] on first launch.
-  ThemeMode_Provider._()
+  ThemeModeNotifierProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'themeMode_Provider',
+        name: r'themeModeProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$themeMode_Hash();
+  String debugGetCreateSourceHash() => _$themeModeNotifierHash();
 
   @$internal
   @override
-  ThemeMode_ create() => ThemeMode_();
+  ThemeModeNotifier create() => ThemeModeNotifier();
 
   /// {@macro riverpod.override_with_value}
   Override overrideWithValue(ThemeMode value) {
@@ -47,12 +47,12 @@ final class ThemeMode_Provider
   }
 }
 
-String _$themeMode_Hash() => r'083f4a70b984602bf3d29029ff3967523d734b64';
+String _$themeModeNotifierHash() => r'0f1b799872f0ec11b01542a65f234aedf9ec2210';
 
 /// Persists and exposes the current [ThemeMode].
 /// Defaults to [ThemeMode.dark] on first launch.
 
-abstract class _$ThemeMode_ extends $Notifier<ThemeMode> {
+abstract class _$ThemeModeNotifier extends $Notifier<ThemeMode> {
   ThemeMode build();
   @$mustCallSuper
   @override
@@ -114,4 +114,4 @@ final class ThemeModeValueProvider
   }
 }
 
-String _$themeModeValueHash() => r'aeeb157e428507e558df97b32eb58d83a933a1a2';
+String _$themeModeValueHash() => r'7033a9c3cea1e2fc5f63057f401fae6e9c997195';

@@ -17,7 +17,6 @@ Future<StorageInfo> storageInfo(Ref ref) async {
 
   // Use the root of the storage (e.g. /storage/emulated/0)
   final root = Directory(dir.path.split('Android').first);
-  final stat = await root.stat();
 
   // Use disk space API on supported platforms
   final totalBytes = await _getDiskSpace(root.path, total: true);
@@ -99,8 +98,6 @@ class StorageScreen extends ConsumerWidget {
         data: (info) {
           final usedFrac =
               info.totalBytes > 0 ? info.usedBytes / info.totalBytes : 0.0;
-          final mediaFrac =
-              info.totalBytes > 0 ? info.mediaBytes / info.totalBytes : 0.0;
 
           return ListView(
             padding: const EdgeInsets.all(16),

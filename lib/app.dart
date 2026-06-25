@@ -10,7 +10,7 @@ class MxVideoApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch<ThemeMode>(themeMode_Provider);
+    final themeMode = ref.watch<ThemeMode>(themeModeProvider);
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(

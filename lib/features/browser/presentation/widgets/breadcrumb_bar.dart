@@ -24,7 +24,7 @@ class BreadcrumbBar extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: pathStack.length,
-        separatorBuilder: (_, __) => const Icon(
+        separatorBuilder: (_, _) => const Icon(
           Icons.chevron_right,
           size: 16,
           color: AppColors.textSecondary,

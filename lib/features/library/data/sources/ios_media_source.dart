@@ -17,7 +17,7 @@ class IosMediaSource implements MediaPlatformSource {
 
   @override
   Future<List<RawMediaItem>> queryVideos() async {
-    final raw = await _channel.invokeListMethod<Map>('queryVideos') ?? [];
+    final raw = await _channel.invokeListMethod<Map<dynamic, dynamic>>('queryVideos') ?? [];
     return raw
         .where((m) => m['path'] != null)
         .map((m) => RawMediaItem.fromMap(Map<String, dynamic>.from(m)))
@@ -27,7 +27,7 @@ class IosMediaSource implements MediaPlatformSource {
   @override
   Future<List<RawMediaItem>> queryAudios() async {
     // iOS audio from Documents directory — returned by the same native method.
-    final raw = await _channel.invokeListMethod<Map>('queryAudios') ?? [];
+    final raw = await _channel.invokeListMethod<Map<dynamic, dynamic>>('queryAudios') ?? [];
     return raw
         .where((m) => m['path'] != null)
         .map((m) => RawMediaItem.fromMap(Map<String, dynamic>.from(m)))
