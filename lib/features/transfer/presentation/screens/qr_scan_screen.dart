@@ -21,7 +21,9 @@ enum _PairingPhase { scanning, connecting, verifying, connected, error }
 ///   3. Show verification code for user confirmation
 ///   4. On confirm: connection is ready for file transfer
 class QrScanScreen extends ConsumerStatefulWidget {
-  const QrScanScreen({super.key});
+  const QrScanScreen({super.key, this.filePaths = const []});
+
+  final List<String> filePaths;
 
   @override
   ConsumerState<QrScanScreen> createState() => _QrScanScreenState();
@@ -550,28 +552,33 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen>
   // ── Handlers ───────────────────────────────────────────────────────────
 
   Future<void> _pickAndSendFiles(PeerDevice peer) async {
-    final result = await FilePicker.pickFiles(
-      allowMultiple: true,
-      type: FileType.any,
-    );
-    if (result == null || result.paths.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No files selected')),
-        );
+    List<String> filePaths;
+
+    if (widget.filePaths.isNotEmpty) {
+      filePaths = widget.filePaths;
+    } else {
+      final result = await FilePicker.pickFiles(
+        allowMultiple: true,
+        type: FileType.any,
+      );
+      if (result == null || result.paths.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No files selected')),
+          );
+        }
+        return;
       }
-      return;
+      filePaths = result.paths.whereType<String>().toList();
+      if (filePaths.isEmpty) return;
     }
 
-    final filePaths = result.paths.whereType<String>().toList();
-    if (filePaths.isEmpty) return;
-
+    if (!mounted) return;
     setState(() => _isSending = true);
 
     try {
-      await ref
-          .read(transferManagerProvider.notifier)
-          .sendFiles(peer, filePaths);
+      final repo = await ref.read(transferRepositoryProvider.future);
+      await repo.sendFiles(peer, filePaths);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -385,9 +385,8 @@ class _NearbyTab extends ConsumerWidget {
     );
 
     try {
-      await ref
-          .read(transferManagerProvider.notifier)
-          .sendFiles(peer, filePaths);
+      final repo = await ref.read(transferRepositoryProvider.future);
+      await repo.sendFiles(peer, filePaths);
 
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

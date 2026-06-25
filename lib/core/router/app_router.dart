@@ -129,7 +129,10 @@ GoRouter appRouter(Ref ref) {
       ),
       GoRoute(
         path: RouteNames.qrScan,
-        builder: (context, state) => const QrScanScreen(),
+        builder: (context, state) {
+          final filePaths = state.extra as List<String>? ?? const [];
+          return QrScanScreen(filePaths: filePaths);
+        },
       ),
 
       // Transfer — Peer list (for sending files)
