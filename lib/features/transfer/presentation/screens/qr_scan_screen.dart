@@ -39,7 +39,6 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen>
   PeerDevice? _connectedPeer;
   String? _verificationCode;
   String? _error;
-  Map<String, dynamic>? _pairingData;
 
   @override
   void initState() {
@@ -82,7 +81,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen>
             IconButton(
               icon: ValueListenableBuilder(
                 valueListenable: _controller,
-                builder: (_, state, __) {
+                builder: (_, state, _) {
                   return Icon(
                     state.torchState == TorchState.on
                         ? Icons.flash_on
@@ -396,22 +395,26 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen>
                     size: 28,
                   ),
                   const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        peer.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          peer.name,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      Text(
-                        '${peer.ipAddress}:${peer.port}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white54,
+                        Text(
+                          '${peer.ipAddress}:${peer.port}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white54,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Container(
@@ -421,12 +424,12 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen>
                       color: AppColors.success.withAlpha(20),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.lock,
+                        Icon(Icons.lock,
                             color: AppColors.success, size: 12),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4),
                         Text(
                           'Encrypted',
                           style: TextStyle(
@@ -534,7 +537,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen>
     if (barcode?.rawValue == null) return;
 
     // Haptic feedback on detection.
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
 
     setState(() => _phase = _PairingPhase.connecting);
 
@@ -554,8 +557,6 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen>
             'This QR code has expired.\nAsk the other device to refresh.');
         return;
       }
-
-      _pairingData = data;
 
       // Connect via the transfer manager (HTTP /pair handshake).
       final peer = await ref
@@ -594,7 +595,6 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen>
   void _reject() {
     _connectedPeer = null;
     _verificationCode = null;
-    _pairingData = null;
     _resetToScan();
   }
 
@@ -614,7 +614,6 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen>
       _error = null;
       _connectedPeer = null;
       _verificationCode = null;
-      _pairingData = null;
     });
   }
 
@@ -685,7 +684,7 @@ class _ScanOverlay extends StatelessWidget {
             height: 260,
             child: AnimatedBuilder(
               animation: animationController,
-              builder: (_, __) {
+              builder: (_, _) {
                 return Align(
                   alignment: Alignment(
                       0, -1 + 2 * animationController.value),

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
@@ -17,9 +16,6 @@ import '../../domain/repositories/transfer_repository.dart';
 import '../sources/ble_discovery_source.dart';
 import '../sources/mdns_source.dart';
 import '../sources/qr_pairing_source.dart';
-import '../socket/socket_transfer_client.dart';
-import '../socket/encryption_handler.dart';
-import '../socket/transfer_protocol.dart';
 import '../socket/transfer_queue.dart';
 import '../transfer_client.dart';
 import '../transfer_server.dart';

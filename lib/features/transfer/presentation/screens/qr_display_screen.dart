@@ -201,7 +201,7 @@ class _QrCodeView extends StatelessWidget {
               ...List.generate(3, (i) {
                 return AnimatedBuilder(
                   animation: pulseController,
-                  builder: (_, __) {
+                  builder: (_, _) {
                     final value =
                         ((pulseController.value + i * 0.33) % 1.0);
                     return Container(
@@ -280,7 +280,7 @@ class _QrCodeView extends StatelessWidget {
               final nameAsync = ref.watch(deviceNameProvider);
               return nameAsync.when(
                 loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
                 data: (name) => Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 8),
@@ -595,10 +595,13 @@ class _ConnectedView extends StatelessWidget {
                 Icon(_platformIcon(peerPlatform),
                     color: AppColors.primaryLight, size: 28),
                 const SizedBox(width: 12),
-                Text(
-                  peerName,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  child: Text(
+                    peerName,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: 12),

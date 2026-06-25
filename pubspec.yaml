@@ -181,6 +181,9 @@ dependencies:
   # Ensures the received file is bit-for-bit identical to the sent file.
   crypto: ^3.0.7
 
+  # Codec utilities (AccumulatorSink) used for streaming hash computation.
+  convert: ^3.1.2
+
   # AES-256-GCM encryption for per-chunk transfer security.
   # Pure Dart implementation — no native code, works on all platforms.
   pointycastle: ^3.9.1

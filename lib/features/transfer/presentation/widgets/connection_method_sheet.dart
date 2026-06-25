@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../data/sources/ble_discovery_source.dart';
 import '../providers/transfer_provider.dart';
 
 /// Bottom sheet showing available connection methods and their status.
@@ -13,7 +12,7 @@ class ConnectionMethodSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
-    return Container(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -30,7 +29,7 @@ class ConnectionMethodSheet extends ConsumerWidget {
           const SizedBox(height: 20),
 
           // WiFi (mDNS).
-          _MethodTile(
+          const _MethodTile(
             icon: Icons.wifi,
             title: 'WiFi (Same Network)',
             subtitle: 'Auto-discovers devices on the same WiFi network',
@@ -54,7 +53,7 @@ class ConnectionMethodSheet extends ConsumerWidget {
           ),
 
           // QR Code.
-          _MethodTile(
+          const _MethodTile(
             icon: Icons.qr_code,
             title: 'QR Code',
             subtitle: 'Scan or show a QR code for instant pairing',
@@ -63,7 +62,7 @@ class ConnectionMethodSheet extends ConsumerWidget {
           ),
 
           // WiFi Direct.
-          _MethodTile(
+          const _MethodTile(
             icon: Icons.wifi_tethering,
             title: 'WiFi Direct',
             subtitle: 'Direct device-to-device connection (Android)',
@@ -72,7 +71,7 @@ class ConnectionMethodSheet extends ConsumerWidget {
           ),
 
           // Hotspot.
-          _MethodTile(
+          const _MethodTile(
             icon: Icons.portable_wifi_off,
             title: 'Hotspot',
             subtitle: 'Create a hotspot on one device, join from the other',

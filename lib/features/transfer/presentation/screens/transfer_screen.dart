@@ -53,29 +53,52 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
           ],
         ),
         actions: [
-          // mDNS radar discovery screen.
-          IconButton(
-            icon: const Icon(Icons.wifi_tethering),
-            tooltip: 'Discover Devices',
-            onPressed: () => _openDiscovery(context),
-          ),
-          // QR code display button.
-          IconButton(
-            icon: const Icon(Icons.qr_code),
-            tooltip: 'Show QR Code',
-            onPressed: () => context.push(RouteNames.qrDisplay),
-          ),
-          // QR code scan button.
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
             tooltip: 'Scan QR Code',
             onPressed: () => context.push(RouteNames.qrScan),
           ),
-          // Connection method selector.
-          IconButton(
-            icon: const Icon(Icons.settings_input_antenna),
-            tooltip: 'Connection Methods',
-            onPressed: () => _showConnectionMethodSheet(context),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              switch (value) {
+                case 'discover':
+                  _openDiscovery(context);
+                case 'showQr':
+                  context.push(RouteNames.qrDisplay);
+                case 'methods':
+                  _showConnectionMethodSheet(context);
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'discover',
+                child: ListTile(
+                  leading: Icon(Icons.wifi_tethering),
+                  title: Text('Discover Devices'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'showQr',
+                child: ListTile(
+                  leading: Icon(Icons.qr_code),
+                  title: Text('Show QR Code'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'methods',
+                child: ListTile(
+                  leading: Icon(Icons.settings_input_antenna),
+                  title: Text('Connection Methods'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -117,8 +140,12 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
   }
 
   void _showConnectionMethodSheet(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.75,
+      ),
       builder: (_) => const ConnectionMethodSheet(),
     );
   }
@@ -153,11 +180,13 @@ class _ActiveTransferBanner extends StatelessWidget {
                   const Icon(Icons.swap_vert,
                       color: AppColors.primaryLight, size: 18),
                   const SizedBox(width: 8),
-                  Text(
-                    '${orch.activeCount} active transfer${orch.activeCount > 1 ? 's' : ''}',
-                    style: theme.textTheme.titleSmall,
+                  Expanded(
+                    child: Text(
+                      '${orch.activeCount} active transfer${orch.activeCount > 1 ? 's' : ''}',
+                      style: theme.textTheme.titleSmall,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  const Spacer(),
                   if (orch.aggregateSpeed > 0)
                     Text(
                       _formatSpeed(orch.aggregateSpeed),
@@ -250,15 +279,16 @@ class _NearbyTab extends ConsumerWidget {
                   onPressed: () => context.push(RouteNames.discovery),
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
                     OutlinedButton.icon(
                       icon: const Icon(Icons.qr_code),
                       label: const Text('Show QR'),
                       onPressed: () => context.push(RouteNames.qrDisplay),
                     ),
-                    const SizedBox(width: 12),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.qr_code_scanner),
                       label: const Text('Scan QR'),
@@ -271,13 +301,12 @@ class _NearbyTab extends ConsumerWidget {
           );
         }
 
-        return RefreshIndicator(
-          onRefresh: () async => ref.invalidate(peersProvider),
-          child: Column(
-            children: [
-              // Connection requirements info banner.
-              const _ConnectionInfoBanner(),
-              Expanded(
+        return Column(
+          children: [
+            const _ConnectionInfoBanner(),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async => ref.invalidate(peersProvider),
                 child: ListView.builder(
                   padding: const EdgeInsets.all(12),
                   itemCount: peers.length,
@@ -287,8 +316,8 @@ class _NearbyTab extends ConsumerWidget {
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );

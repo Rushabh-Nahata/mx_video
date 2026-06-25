@@ -64,17 +64,17 @@ class TransferProgressCard extends ConsumerWidget {
             // ── Size + speed + ETA ────────────────────────────────────
             Row(
               children: [
-                // Transferred / total.
-                Text(
-                  '${FileSizeFormatter.format(job.bytesTransferred)} / '
-                  '${FileSizeFormatter.format(job.fileSize)}',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.textSecondary),
+                Flexible(
+                  child: Text(
+                    '${FileSizeFormatter.format(job.bytesTransferred)} / '
+                    '${FileSizeFormatter.format(job.fileSize)}',
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.textSecondary),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                const Spacer(),
-
-                // Speed (only when active).
                 if (job.isActive && job.speedFormatted.isNotEmpty) ...[
+                  const SizedBox(width: 8),
                   Icon(Icons.speed, size: 14, color: accentColor),
                   const SizedBox(width: 4),
                   Text(

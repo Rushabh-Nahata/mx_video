@@ -67,7 +67,9 @@ class PeerCard extends StatelessWidget {
                 label: Text(peer.ipAddress.isEmpty ? 'No WiFi' : 'Send'),
                 onPressed: onSend,
                 style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
                   backgroundColor: peer.ipAddress.isEmpty
                       ? AppColors.textSecondary
                       : null,
