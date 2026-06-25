@@ -56,7 +56,9 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
             tooltip: 'Scan QR Code',
-            onPressed: () => context.push(RouteNames.qrScan),
+            onPressed: () async {
+              await context.push(RouteNames.qrScan);
+            },
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -262,17 +264,18 @@ class _NearbyTab extends ConsumerWidget {
       ),
       data: (peers) {
         if (peers.isEmpty) {
-          return Center(
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               children: [
+                const SizedBox(height: 24),
                 const EmptyState(
                   icon: Icons.devices_other_outlined,
                   title: 'No devices found',
                   subtitle:
                       'Make sure both devices are on the same WiFi or use QR code pairing',
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 FilledButton.icon(
                   icon: const Icon(Icons.wifi_tethering),
                   label: const Text('Discover Devices'),
@@ -292,10 +295,14 @@ class _NearbyTab extends ConsumerWidget {
                     OutlinedButton.icon(
                       icon: const Icon(Icons.qr_code_scanner),
                       label: const Text('Scan QR'),
-                      onPressed: () => context.push(RouteNames.qrScan),
+                      onPressed: () async {
+                        await context.push(RouteNames.qrScan);
+                      },
                     ),
                   ],
                 ),
+                const SizedBox(height: 32),
+                const _ConnectionGuide(),
               ],
             ),
           );
@@ -456,6 +463,149 @@ class _ConnectionInfoBanner extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Connection Guide ──────────────────────────────────────────────────────
+
+class _ConnectionGuide extends StatelessWidget {
+  const _ConnectionGuide();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withAlpha(80),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.help_outline,
+                  color: AppColors.primaryLight, size: 20),
+              const SizedBox(width: 8),
+              Text('How to Transfer Files',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  )),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _guideStep(
+            context,
+            icon: Icons.wifi,
+            title: 'Same WiFi Network (Recommended)',
+            description:
+                'Connect both devices to the same WiFi network. '
+                'Devices will be discovered automatically. '
+                'Use 5 GHz band for fastest speeds.',
+            color: AppColors.success,
+          ),
+          const SizedBox(height: 12),
+          _guideStep(
+            context,
+            icon: Icons.qr_code,
+            title: 'QR Code Pairing',
+            description:
+                'If auto-discovery doesn\'t work, one device shows a QR code '
+                'and the other scans it. Both must be on the same WiFi.',
+            color: AppColors.primaryLight,
+          ),
+          const SizedBox(height: 12),
+          _guideStep(
+            context,
+            icon: Icons.wifi_tethering,
+            title: 'Mobile Hotspot (No WiFi)',
+            description:
+                'No shared WiFi? Turn on hotspot on one phone, '
+                'connect the other to it, then open MX Video on both.',
+            color: AppColors.warning,
+          ),
+          const SizedBox(height: 12),
+          _guideStep(
+            context,
+            icon: Icons.bluetooth,
+            title: 'Bluetooth (Discovery Only)',
+            description:
+                'Bluetooth helps find nearby devices but cannot transfer files. '
+                'You still need WiFi or hotspot for the actual transfer.',
+            color: const Color(0xFF2196F3),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.info.withAlpha(15),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.info.withAlpha(40)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline,
+                    color: AppColors.info, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Make sure MX Video is open on both devices before transferring.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _guideStep(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String description,
+    required Color color,
+  }) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withAlpha(20),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              )),
+              const SizedBox(height: 2),
+              Text(
+                description,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

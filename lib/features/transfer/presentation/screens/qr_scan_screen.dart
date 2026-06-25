@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,6 +40,7 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen>
   PeerDevice? _connectedPeer;
   String? _verificationCode;
   String? _error;
+  bool _isSending = false;
 
   @override
   void initState() {
@@ -448,15 +450,32 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen>
             const SizedBox(height: 32),
 
             // Action buttons.
-            FilledButton.icon(
-              icon: const Icon(Icons.send),
-              label: const Text('Send Files'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 32, vertical: 14),
+            if (_isSending)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 14),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 12),
+                    Text('Sending...', style: TextStyle(color: Colors.white70)),
+                  ],
+                ),
+              )
+            else
+              FilledButton.icon(
+                icon: const Icon(Icons.send),
+                label: const Text('Send Files'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 32, vertical: 14),
+                ),
+                onPressed: () => _pickAndSendFiles(peer),
               ),
-              onPressed: () => Navigator.of(context).pop(peer),
-            ),
             const SizedBox(height: 12),
             OutlinedButton(
               style: OutlinedButton.styleFrom(
@@ -529,6 +548,53 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen>
   }
 
   // ── Handlers ───────────────────────────────────────────────────────────
+
+  Future<void> _pickAndSendFiles(PeerDevice peer) async {
+    final result = await FilePicker.pickFiles(
+      allowMultiple: true,
+      type: FileType.any,
+    );
+    if (result == null || result.paths.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No files selected')),
+        );
+      }
+      return;
+    }
+
+    final filePaths = result.paths.whereType<String>().toList();
+    if (filePaths.isEmpty) return;
+
+    setState(() => _isSending = true);
+
+    try {
+      await ref
+          .read(transferManagerProvider.notifier)
+          .sendFiles(peer, filePaths);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Sending ${filePaths.length} file${filePaths.length > 1 ? 's' : ''} '
+            'to ${peer.name}. Check Transfer > History for progress.',
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Transfer failed: $e'),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+  }
 
   Future<void> _handleDetection(BarcodeCapture capture) async {
     if (_phase != _PairingPhase.scanning) return;
