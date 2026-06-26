@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:drift/drift.dart';
 import 'package:logger/logger.dart';
@@ -32,6 +33,8 @@ class TransferRepositoryImpl implements TransferRepository {
     required this.client,
     required this.deviceName,
     required this.platform,
+    this.mediaDao,
+    this.onIncomingTransfer,
   });
 
   final TransferDao dao;
@@ -42,6 +45,8 @@ class TransferRepositoryImpl implements TransferRepository {
   final TransferClient client;
   final String deviceName;
   final String platform;
+  final AppDatabase? mediaDao;
+  final VoidCallback? onIncomingTransfer;
 
   late final TransferQueue _queue = TransferQueue()
     ..onJobCompleted = _onJobCompleted
@@ -112,13 +117,24 @@ class TransferRepositoryImpl implements TransferRepository {
         status: const Value('active'),
         startedAt: Value(DateTime.now().millisecondsSinceEpoch),
       ));
+      TransferOrchestrator.instance.addJob(TransferJobEntity(
+        id: jobId,
+        peerName: peerName,
+        peerIp: '',
+        fileName: fileName,
+        fileSize: fileSize,
+        direction: TransferDirection.receive,
+        status: TransferStatus.active,
+        startedAt: DateTime.now().millisecondsSinceEpoch,
+      ));
       _log.i(
           'Receiving "$fileName" ($fileSize bytes) from $peerName [job=$jobId]');
+      onIncomingTransfer?.call();
       return true;
     };
 
     server.onReceiveProgress = (fileName, bytesReceived, totalBytes) {
-      _updateReceiveJobProgress(fileName, bytesReceived);
+      _updateReceiveJobProgress(fileName, bytesReceived, totalBytes);
     };
 
     server.onFileReceived = (fileName, savePath, checksum, peerName) {
@@ -129,7 +145,7 @@ class TransferRepositoryImpl implements TransferRepository {
     // Wire up socket server callbacks.
     server.socketServer.onTransferOffer = (token, files) async {
       for (final entry in files) {
-        await dao.insertJob(TransferJobsCompanion(
+        final jobId = await dao.insertJob(TransferJobsCompanion(
           peerName: const Value('Peer'),
           peerIp: const Value(''),
           fileName: Value(entry.fileName),
@@ -142,7 +158,18 @@ class TransferRepositoryImpl implements TransferRepository {
                   AppConstants.transferChunkBytes),
           sessionId: Value(token),
         ));
+        TransferOrchestrator.instance.addJob(TransferJobEntity(
+          id: jobId,
+          peerName: 'Peer',
+          peerIp: '',
+          fileName: entry.fileName,
+          fileSize: entry.fileSize,
+          direction: TransferDirection.receive,
+          status: TransferStatus.active,
+          startedAt: DateTime.now().millisecondsSinceEpoch,
+        ));
       }
+      onIncomingTransfer?.call();
       return true;
     };
 
@@ -343,15 +370,20 @@ class TransferRepositoryImpl implements TransferRepository {
   void _onProgress(
       int jobId, int bytesTransferred, int totalBytes, int speed) {
     dao.updateProgress(jobId, bytesTransferred);
+    final existing = TransferOrchestrator.instance.currentJobs
+        .where((j) => j.id == jobId)
+        .firstOrNull;
     TransferOrchestrator.instance.updateJob(
-      TransferJobEntity(
+      (existing ?? TransferJobEntity(
         id: jobId,
         peerName: '',
         peerIp: '',
         fileName: '',
         fileSize: totalBytes,
-        bytesTransferred: bytesTransferred,
         direction: TransferDirection.send,
+      )).copyWith(
+        bytesTransferred: bytesTransferred,
+        fileSize: totalBytes,
         status: TransferStatus.active,
         speedBytesPerSec: speed,
       ),
@@ -360,14 +392,42 @@ class TransferRepositoryImpl implements TransferRepository {
 
   // ── Internal helpers ───────────────────────────────────────────────────
 
+  final _receiveStartTimes = <int, int>{};
+
   Future<void> _updateReceiveJobProgress(
-      String fileName, int bytesReceived) async {
+      String fileName, int bytesReceived, int totalBytes) async {
     final jobs = await dao.watchActive().first;
     for (final job in jobs) {
       if (job.fileName == fileName &&
           job.direction == 'receive' &&
           job.status == 'active') {
         await dao.updateProgress(job.id, bytesReceived);
+
+        final startTime = _receiveStartTimes.putIfAbsent(
+            job.id, () => DateTime.now().millisecondsSinceEpoch);
+        final elapsed =
+            DateTime.now().millisecondsSinceEpoch - startTime;
+        final speed =
+            elapsed > 0 ? (bytesReceived * 1000) ~/ elapsed : 0;
+
+        final existing = TransferOrchestrator.instance.currentJobs
+            .where((j) => j.id == job.id)
+            .firstOrNull;
+        TransferOrchestrator.instance.updateJob(
+          (existing ?? TransferJobEntity(
+            id: job.id,
+            peerName: job.peerName,
+            peerIp: '',
+            fileName: fileName,
+            fileSize: totalBytes,
+            direction: TransferDirection.receive,
+          )).copyWith(
+            bytesTransferred: bytesReceived,
+            fileSize: totalBytes,
+            status: TransferStatus.active,
+            speedBytesPerSec: speed,
+          ),
+        );
         break;
       }
     }
@@ -394,9 +454,65 @@ class TransferRepositoryImpl implements TransferRepository {
           job.direction == 'receive' &&
           job.status == 'active') {
         await dao.markCompleted(job.id, checksum);
+        _receiveStartTimes.remove(job.id);
+        final existing = TransferOrchestrator.instance.currentJobs
+            .where((j) => j.id == job.id)
+            .firstOrNull;
+        if (existing != null) {
+          TransferOrchestrator.instance.updateJob(
+            existing.copyWith(
+              bytesTransferred: existing.fileSize,
+              status: TransferStatus.completed,
+              speedBytesPerSec: 0,
+            ),
+          );
+        }
+        // Add received file to the media library database.
+        await _addReceivedFileToLibrary(savePath);
         break;
       }
     }
+  }
+
+  Future<void> _addReceivedFileToLibrary(String savePath) async {
+    final db = mediaDao;
+    if (db == null) return;
+    final file = File(savePath);
+    if (!await file.exists()) return;
+
+    final ext = p.extension(savePath).replaceFirst('.', '').toLowerCase();
+    final isVideo = AppConstants.videoExtensions.contains(ext);
+    final isAudio = AppConstants.audioExtensions.contains(ext);
+    if (!isVideo && !isAudio) return;
+
+    final fileSize = await file.length();
+    final folderPath = p.dirname(savePath);
+    final folderName = p.basename(folderPath);
+
+    // Upsert the folder.
+    await db.mediaDao.upsertFolders([
+      MediaFoldersCompanion.insert(
+        absolutePath: folderPath,
+        name: folderName,
+        videoCount: Value(isVideo ? 1 : 0),
+        audioCount: Value(isAudio ? 1 : 0),
+      ),
+    ]);
+    final folderIds = await db.mediaDao.getFolderIdsByPaths([folderPath]);
+    final folderId = folderIds[folderPath];
+
+    // Upsert the file.
+    await db.mediaDao.upsertFiles([
+      MediaFilesCompanion.insert(
+        absolutePath: savePath,
+        name: p.basenameWithoutExtension(savePath),
+        extension: ext,
+        sizeBytes: fileSize,
+        scannedAt: DateTime.now().millisecondsSinceEpoch,
+        folderId: Value(folderId),
+      ),
+    ]);
+    _log.i('Added received file to library: $savePath');
   }
 
   TransferJobEntity _mapJob(TransferJob row) => TransferJobEntity(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -389,14 +391,7 @@ class _NearbyTab extends ConsumerWidget {
       await repo.sendFiles(peer, filePaths);
 
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Transfer to ${peer.name} started! Check History tab for progress.',
-          ),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      unawaited(context.push(RouteNames.transferProgress));
     } catch (e) {
       if (!context.mounted) return;
       final message = _userFriendlyError(e.toString(), peer);

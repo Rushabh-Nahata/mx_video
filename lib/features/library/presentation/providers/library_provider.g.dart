@@ -513,6 +513,70 @@ abstract class _$SortedFilesInFolder
   }
 }
 
+@ProviderFor(SortedAllFiles)
+final sortedAllFilesProvider = SortedAllFilesProvider._();
+
+final class SortedAllFilesProvider
+    extends
+        $NotifierProvider<SortedAllFiles, AsyncValue<List<MediaFileEntity>>> {
+  SortedAllFilesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'sortedAllFilesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$sortedAllFilesHash();
+
+  @$internal
+  @override
+  SortedAllFiles create() => SortedAllFiles();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AsyncValue<List<MediaFileEntity>> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AsyncValue<List<MediaFileEntity>>>(
+        value,
+      ),
+    );
+  }
+}
+
+String _$sortedAllFilesHash() => r'8a57c75d16e52f0ab1bdd494d591242901665a00';
+
+abstract class _$SortedAllFiles
+    extends $Notifier<AsyncValue<List<MediaFileEntity>>> {
+  AsyncValue<List<MediaFileEntity>> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref =
+        this.ref
+            as $Ref<
+              AsyncValue<List<MediaFileEntity>>,
+              AsyncValue<List<MediaFileEntity>>
+            >;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<
+                AsyncValue<List<MediaFileEntity>>,
+                AsyncValue<List<MediaFileEntity>>
+              >,
+              AsyncValue<List<MediaFileEntity>>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
 @ProviderFor(searchResults)
 final searchResultsProvider = SearchResultsProvider._();
 

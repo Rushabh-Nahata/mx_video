@@ -19,5 +19,6 @@ class RouteNames {
   static const String videoDetails = '/library/details';
   static const String storage = '/library/storage';
   static const String statusSaver = '/library/status-saver';
+  static const String transferProgress = '/transfer/progress';
   static const String settings = '/settings';
 }

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
-import 'package:crypto/crypto.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
 
@@ -139,6 +138,7 @@ class TransferQueue {
       await client.connect(transfer.peer.ipAddress, socketPort);
 
       // Build file manifest — skip files that are no longer accessible.
+      // Checksum is deferred until after transfer to avoid blocking.
       final manifest = <FileManifestEntry>[];
       final validPaths = <String>[];
       for (final path in transfer.filePaths) {
@@ -148,11 +148,10 @@ class TransferQueue {
           continue;
         }
         final fileSize = await file.length();
-        final checksum = await _computeChecksum(path);
         manifest.add(FileManifestEntry(
           fileName: p.basename(path),
           fileSize: fileSize,
-          checksum: checksum,
+          checksum: '',
         ));
         validPaths.add(path);
       }
@@ -216,12 +215,6 @@ class TransferQueue {
     }
 
     _processNext();
-  }
-
-  Future<String> _computeChecksum(String filePath) async {
-    final file = File(filePath);
-    final digest = await sha256.bind(file.openRead()).first;
-    return digest.toString();
   }
 
   Future<void> dispose() async {

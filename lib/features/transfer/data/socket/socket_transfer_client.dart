@@ -179,6 +179,8 @@ class SocketTransferClient {
 
     try {
       final missingChunks = bitmap.missingChunks;
+      const pipelineWindow = AppConstants.socketPipelineWindow;
+      int inFlight = 0;
 
       for (final chunkIndex in missingChunks) {
         if (_isCancelled) return false;
@@ -197,26 +199,43 @@ class SocketTransferClient {
           data = encryption.encryptChunk(data, chunkIndex);
         }
 
-        // Send chunk.
+        // Send chunk without flushing each time.
         final payload =
             TransferProtocol.encodeChunkData(fileIndex, chunkIndex, data);
         _socket!.add(
             TransferProtocol.encodeFrame(TransferProtocol.chunkData, payload));
-        await _socket!.flush();
+        inFlight++;
 
-        // Wait for ACK.
-        final ackFrame = await _frameReader!.frames
-            .where((f) => f.type == TransferProtocol.chunkAck)
-            .first
-            .timeout(const Duration(seconds: 30));
-
-        final ack = TransferProtocol.decodeChunkAck(ackFrame.payload);
-        if (!ack.success) {
-          _log.w('Chunk $chunkIndex rejected for file $fileIndex');
-          continue; // Will be retried on the next pass or the receiver can re-request
+        // Drain ACKs when pipeline window is full.
+        if (inFlight >= pipelineWindow) {
+          await _socket!.flush();
+          while (inFlight > 0) {
+            final ackFrame = await _frameReader!.frames
+                .where((f) => f.type == TransferProtocol.chunkAck)
+                .first
+                .timeout(const Duration(seconds: 30));
+            final ack = TransferProtocol.decodeChunkAck(ackFrame.payload);
+            if (!ack.success) {
+              _log.w('Chunk rejected for file $fileIndex');
+            }
+            inFlight--;
+            tracker.onChunkCompleted(data.length);
+          }
         }
+      }
 
-        tracker.onChunkCompleted(data.length);
+      // Drain remaining ACKs.
+      if (inFlight > 0) {
+        await _socket!.flush();
+        while (inFlight > 0) {
+          final ackFrame = await _frameReader!.frames
+              .where((f) => f.type == TransferProtocol.chunkAck)
+              .first
+              .timeout(const Duration(seconds: 30));
+          TransferProtocol.decodeChunkAck(ackFrame.payload);
+          inFlight--;
+          tracker.onChunkCompleted(AppConstants.transferChunkBytes);
+        }
       }
 
       // Send FILE_COMPLETE with checksum.

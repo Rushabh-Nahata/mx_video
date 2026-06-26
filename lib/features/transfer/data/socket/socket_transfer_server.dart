@@ -333,6 +333,11 @@ class SocketTransferServer {
   }
 
   Future<String> _resolveDownloadDir() async {
+    if (Platform.isAndroid) {
+      final dir = Directory('/storage/emulated/0/Movies/MX Video');
+      if (!await dir.exists()) await dir.create(recursive: true);
+      return dir.path;
+    }
     final base = await getApplicationDocumentsDirectory();
     final dir = Directory(p.join(base.path, 'MX Video Downloads'));
     if (!await dir.exists()) await dir.create(recursive: true);

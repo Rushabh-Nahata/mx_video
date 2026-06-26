@@ -1,9 +1,12 @@
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../core/constants/route_names.dart';
 import '../../../../core/di/providers.dart';
+import '../../../../core/router/app_router.dart';
 import '../../data/repositories/transfer_repository_impl.dart';
 import '../../data/sources/ble_discovery_source.dart';
 import '../../data/sources/mdns_source.dart';
@@ -101,6 +104,17 @@ Future<TransferRepository> transferRepository(Ref ref) async {
     client: ref.watch(transferClientProvider),
     deviceName: name,
     platform: platform,
+    mediaDao: ref.watch(appDatabaseProvider),
+    onIncomingTransfer: () {
+      final nav = rootNavigatorKey.currentState;
+      if (nav != null) {
+        final router = GoRouter.of(nav.context);
+        final location = router.routeInformationProvider.value.uri.path;
+        if (location != RouteNames.transferProgress) {
+          router.push(RouteNames.transferProgress);
+        }
+      }
+    },
   );
 }
 

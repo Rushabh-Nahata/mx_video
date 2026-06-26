@@ -4,8 +4,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../../../core/constants/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/peer_device.dart';
 import '../providers/transfer_provider.dart';
@@ -580,16 +582,8 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen>
       final repo = await ref.read(transferRepositoryProvider.future);
       await repo.sendFiles(peer, filePaths);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Sending ${filePaths.length} file${filePaths.length > 1 ? 's' : ''} '
-            'to ${peer.name}. Check Transfer > History for progress.',
-          ),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-      Navigator.of(context).pop();
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      unawaited(GoRouter.of(context).push(RouteNames.transferProgress));
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSending = false);

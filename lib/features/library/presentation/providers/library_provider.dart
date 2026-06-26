@@ -100,6 +100,21 @@ List<MediaFileEntity> _sortFiles(List<MediaFileEntity> files, SortOrder order) {
   return sorted;
 }
 
+// ── Sorted all files (for browse tab) ─────────────────────────────────────
+
+@riverpod
+class SortedAllFiles extends _$SortedAllFiles {
+  @override
+  AsyncValue<List<MediaFileEntity>> build() {
+    final filesAsync = ref.watch(allFilesProvider);
+    final sortOrder = ref.watch(folderSortOrderProvider);
+    return filesAsync.whenData((files) {
+      final videos = files.where((f) => f.isVideo).toList();
+      return _sortFiles(videos, sortOrder);
+    });
+  }
+}
+
 // ── Search results ─────────────────────────────────────────────────────────
 
 @riverpod

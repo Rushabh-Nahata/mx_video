@@ -20,14 +20,18 @@ import '../../features/transfer/presentation/screens/peer_list_screen.dart';
 import '../../features/shell/shell_screen.dart';
 import '../../features/transfer/presentation/screens/qr_display_screen.dart';
 import '../../features/transfer/presentation/screens/qr_scan_screen.dart';
+import '../../features/transfer/presentation/screens/transfer_progress_screen.dart';
 import '../../features/transfer/presentation/screens/transfer_screen.dart';
 import '../constants/route_names.dart';
 
 part 'app_router.g.dart';
 
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 @riverpod
 GoRouter appRouter(Ref ref) {
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: RouteNames.library,
     debugLogDiagnostics: false,
     routes: [
@@ -133,6 +137,12 @@ GoRouter appRouter(Ref ref) {
           final filePaths = state.extra as List<String>? ?? const [];
           return QrScanScreen(filePaths: filePaths);
         },
+      ),
+
+      // Transfer — Progress screen
+      GoRoute(
+        path: RouteNames.transferProgress,
+        builder: (context, state) => const TransferProgressScreen(),
       ),
 
       // Transfer — Peer list (for sending files)

@@ -78,7 +78,7 @@ class PeerListScreen extends ConsumerWidget {
                   FilledButton.icon(
                     icon: const Icon(Icons.qr_code_scanner),
                     label: const Text('Scan QR Code'),
-                    onPressed: () => context.push(RouteNames.qrScan),
+                    onPressed: () => context.push(RouteNames.qrScan, extra: filePaths),
                   ),
                 ],
               ),
@@ -120,15 +120,8 @@ class PeerListScreen extends ConsumerWidget {
                   final repo = await ref.read(transferRepositoryProvider.future);
                   await repo.sendFiles(peers[i], filePaths);
                   if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Sending ${filePaths.length} file${filePaths.length > 1 ? 's' : ''} '
-                        'to ${peers[i].name}...',
-                      ),
-                    ),
-                  );
-                  Navigator.of(context).pop();
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  await context.push(RouteNames.transferProgress);
                 } catch (e) {
                   if (!context.mounted) return;
                   final msg = e.toString().toLowerCase();
