@@ -133,9 +133,19 @@ class TransferQueue {
     );
 
     try {
-      // Connect to receiver's socket port.
+      // Connect to receiver's socket port with retry.
       final socketPort = transfer.socketPort ?? transfer.peer.port;
-      await client.connect(transfer.peer.ipAddress, socketPort);
+      const maxRetries = 3;
+      for (int attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          await client.connect(transfer.peer.ipAddress, socketPort);
+          break;
+        } catch (e) {
+          if (attempt == maxRetries) rethrow;
+          _log.w('Connect attempt $attempt failed, retrying in 2s: $e');
+          await Future.delayed(const Duration(seconds: 2));
+        }
+      }
 
       // Build file manifest — skip files that are no longer accessible.
       // Checksum is deferred until after transfer to avoid blocking.

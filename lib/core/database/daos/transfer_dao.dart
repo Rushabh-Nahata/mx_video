@@ -56,6 +56,17 @@ class TransferDao extends DatabaseAccessor<AppDatabase>
         ),
       );
 
+  Future<void> markCompletedWithPath(
+          int id, String checksum, String savePath) =>
+      (update(transferJobs)..where((t) => t.id.equals(id))).write(
+        TransferJobsCompanion(
+          status: const Value('completed'),
+          checksum: Value(checksum),
+          savePath: Value(savePath),
+          finishedAt: Value(DateTime.now().millisecondsSinceEpoch),
+        ),
+      );
+
   Future<void> markFailed(int id, String errorMessage) =>
       (update(transferJobs)..where((t) => t.id.equals(id))).write(
         TransferJobsCompanion(

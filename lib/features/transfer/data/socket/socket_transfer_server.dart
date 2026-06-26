@@ -106,6 +106,7 @@ class SocketTransferServer {
     String? sessionToken;
     EncryptionHandler? encryption;
 
+    try {
     await for (final frame in reader.frames) {
       try {
         switch (frame.type) {
@@ -220,7 +221,7 @@ class SocketTransferServer {
                   .saveBitmap(fileState.partialPath, fileState.bitmap);
             }
 
-            // Send ACK.
+            // Send ACK and flush so sender can proceed immediately.
             final ack = TransferProtocol.encodeChunkAck(
                 chunk.fileIndex, chunk.chunkIndex, true);
             socket.add(
@@ -329,15 +330,13 @@ class SocketTransferServer {
         }
       }
     }
+    } catch (e, st) {
+      _log.e('Connection handler error: $e\n$st');
+    }
     await reader.dispose();
   }
 
   Future<String> _resolveDownloadDir() async {
-    if (Platform.isAndroid) {
-      final dir = Directory('/storage/emulated/0/Movies/MX Video');
-      if (!await dir.exists()) await dir.create(recursive: true);
-      return dir.path;
-    }
     final base = await getApplicationDocumentsDirectory();
     final dir = Directory(p.join(base.path, 'MX Video Downloads'));
     if (!await dir.exists()) await dir.create(recursive: true);

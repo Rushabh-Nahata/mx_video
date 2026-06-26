@@ -11,8 +11,8 @@ class AppConstants {
   static const int transferServerPort = 0; // 0 = OS picks a free port
   static const int transferHistoryRetentionDays = 30;
 
-  /// Chunk size for file I/O during transfer (4 MB for high-speed LAN).
-  static const int transferChunkBytes = 4 * 1024 * 1024;
+  /// Chunk size for file I/O during transfer (2 MB).
+  static const int transferChunkBytes = 2 * 1024 * 1024;
 
   /// Read buffer size for streaming file uploads (256 KB).
   static const int transferBufferBytes = 256 * 1024;
@@ -21,7 +21,7 @@ class AppConstants {
   static const int maxConcurrentTransfers = 3;
 
   /// Timeout for handshake / offer requests.
-  static const Duration transferHandshakeTimeout = Duration(seconds: 10);
+  static const Duration transferHandshakeTimeout = Duration(seconds: 30);
 
   /// Timeout for the entire file transfer (per GB).
   static const Duration transferTimeoutPerGb = Duration(minutes: 10);
@@ -51,7 +51,7 @@ class AppConstants {
   static const int bitmapPersistInterval = 50;
 
   /// Window size for pipelined chunk sends (chunks in flight before ACK).
-  static const int socketPipelineWindow = 8;
+  static const int socketPipelineWindow = 4;
 
   // ── QR Pairing ──────────────────────────────────────────────────────────
   /// Prefix for QR code data to identify MX Video pairing codes.

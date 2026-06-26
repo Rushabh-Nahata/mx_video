@@ -383,12 +383,6 @@ class TransferServer {
   }
 
   Future<String> _resolveDownloadDir() async {
-    // Save to public storage so files appear in media library.
-    if (Platform.isAndroid) {
-      final dir = Directory('/storage/emulated/0/Movies/MX Video');
-      if (!await dir.exists()) await dir.create(recursive: true);
-      return dir.path;
-    }
     final base = await getApplicationDocumentsDirectory();
     final dir = Directory(p.join(base.path, 'MX Video Downloads'));
     if (!await dir.exists()) await dir.create(recursive: true);

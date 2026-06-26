@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/file_size_formatter.dart';
 import '../../domain/entities/transfer_job.dart';
@@ -20,7 +22,12 @@ class TransferProgressCard extends ConsumerWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Padding(
+      child: InkWell(
+        onTap: job.isCompleted && job.savePath != null
+            ? () => _openFile(context, job)
+            : null,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,7 +167,20 @@ class TransferProgressCard extends ConsumerWidget {
           ],
         ),
       ),
+      ),
     );
+  }
+
+  void _openFile(BuildContext context, TransferJobEntity job) {
+    final path = job.savePath!;
+    final ext = path.split('.').last.toLowerCase();
+    const videoExts = {'mp4', 'mkv', 'avi', 'mov', 'webm', 'flv', '3gp'};
+    const audioExts = {'mp3', 'aac', 'flac', 'wav', 'ogg', 'm4a', 'wma'};
+    if (videoExts.contains(ext)) {
+      context.push('${RouteNames.videoPlayer}?path=${Uri.encodeComponent(path)}');
+    } else if (audioExts.contains(ext)) {
+      context.push('${RouteNames.audioPlayer}?path=${Uri.encodeComponent(path)}');
+    }
   }
 
   String _formatDuration(Duration d) {

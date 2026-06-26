@@ -174,85 +174,84 @@ class SocketTransferClient {
       initialChunksTransferred: bitmap.receivedCount,
     );
 
-    // Listen for progress.
     final progressSub = tracker.progressStream.listen(onProgress);
 
     try {
       final missingChunks = bitmap.missingChunks;
       const pipelineWindow = AppConstants.socketPipelineWindow;
-      int inFlight = 0;
 
-      for (final chunkIndex in missingChunks) {
+      // Subscribe to ACK stream ONCE before sending any chunks.
+      // StreamIterator buffers events — no dropped ACKs on broadcast stream.
+      final ackStream =
+          _frameReader!.frames.where((f) => f.type == TransferProtocol.chunkAck);
+      final ackIterator = StreamIterator(ackStream);
+
+      int inFlight = 0;
+      int chunkIdx = 0;
+
+      while (chunkIdx < missingChunks.length || inFlight > 0) {
         if (_isCancelled) return false;
 
-        // Wait while paused.
         while (_isPaused && !_isCancelled) {
           await Future.delayed(const Duration(milliseconds: 200));
         }
         if (_isCancelled) return false;
 
-        // Read chunk from file.
-        var data = await chunkMgr.readChunk(chunkIndex);
+        // Send chunks up to pipeline window.
+        while (inFlight < pipelineWindow && chunkIdx < missingChunks.length) {
+          final chunkIndex = missingChunks[chunkIdx];
+          var data = await chunkMgr.readChunk(chunkIndex);
 
-        // Encrypt if enabled.
-        if (encryption != null) {
-          data = encryption.encryptChunk(data, chunkIndex);
-        }
-
-        // Send chunk without flushing each time.
-        final payload =
-            TransferProtocol.encodeChunkData(fileIndex, chunkIndex, data);
-        _socket!.add(
-            TransferProtocol.encodeFrame(TransferProtocol.chunkData, payload));
-        inFlight++;
-
-        // Drain ACKs when pipeline window is full.
-        if (inFlight >= pipelineWindow) {
-          await _socket!.flush();
-          while (inFlight > 0) {
-            final ackFrame = await _frameReader!.frames
-                .where((f) => f.type == TransferProtocol.chunkAck)
-                .first
-                .timeout(const Duration(seconds: 30));
-            final ack = TransferProtocol.decodeChunkAck(ackFrame.payload);
-            if (!ack.success) {
-              _log.w('Chunk rejected for file $fileIndex');
-            }
-            inFlight--;
-            tracker.onChunkCompleted(data.length);
+          if (encryption != null) {
+            data = encryption.encryptChunk(data, chunkIndex);
           }
-        }
-      }
 
-      // Drain remaining ACKs.
-      if (inFlight > 0) {
+          final payload =
+              TransferProtocol.encodeChunkData(fileIndex, chunkIndex, data);
+          _socket!.add(
+              TransferProtocol.encodeFrame(TransferProtocol.chunkData, payload));
+          inFlight++;
+          chunkIdx++;
+        }
+
+        // Flush all queued chunks at once.
         await _socket!.flush();
-        while (inFlight > 0) {
-          final ackFrame = await _frameReader!.frames
-              .where((f) => f.type == TransferProtocol.chunkAck)
-              .first
-              .timeout(const Duration(seconds: 30));
-          TransferProtocol.decodeChunkAck(ackFrame.payload);
-          inFlight--;
-          tracker.onChunkCompleted(AppConstants.transferChunkBytes);
+
+        // Drain one ACK.
+        final gotAck =
+            await ackIterator.moveNext().timeout(const Duration(seconds: 60));
+        if (!gotAck) {
+          throw Exception('Connection closed while waiting for chunk ACK');
         }
+        final ack = TransferProtocol.decodeChunkAck(ackIterator.current.payload);
+        if (!ack.success) {
+          _log.w('Chunk rejected for file $fileIndex');
+        }
+        inFlight--;
+        tracker.onChunkCompleted(AppConstants.transferChunkBytes);
       }
 
-      // Send FILE_COMPLETE with checksum.
-      final checksum = await chunkMgr.computeChecksum(filePath);
+      await ackIterator.cancel();
+
+      // Send FILE_COMPLETE (empty checksum — skip blocking hash).
       final fcPayload =
-          TransferProtocol.encodeFileComplete(fileIndex, checksum);
+          TransferProtocol.encodeFileComplete(fileIndex, '');
       _socket!.add(TransferProtocol.encodeFrame(
           TransferProtocol.fileComplete, fcPayload));
       await _socket!.flush();
 
-      // Wait for FILE_VERIFIED.
-      final verifyFrame = await _frameReader!.frames
-          .where((f) => f.type == TransferProtocol.fileVerified)
-          .first
-          .timeout(const Duration(seconds: 60));
-
-      final verified = TransferProtocol.decodeFileVerified(verifyFrame.payload);
+      // Subscribe to verified stream BEFORE it can arrive.
+      final verifiedStream = _frameReader!.frames
+          .where((f) => f.type == TransferProtocol.fileVerified);
+      final verifiedIterator = StreamIterator(verifiedStream);
+      final gotVerified =
+          await verifiedIterator.moveNext().timeout(const Duration(seconds: 60));
+      if (!gotVerified) {
+        throw Exception('Connection closed while waiting for file verification');
+      }
+      final verified =
+          TransferProtocol.decodeFileVerified(verifiedIterator.current.payload);
+      await verifiedIterator.cancel();
       tracker.emitFinal();
 
       return verified.match;
