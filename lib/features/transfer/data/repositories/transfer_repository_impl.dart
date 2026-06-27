@@ -108,30 +108,28 @@ class TransferRepositoryImpl implements TransferRepository {
 
     // Wire up HTTP server callbacks for legacy transfers.
     server.onTransferOffer = (peerName, fileName, fileSize) async {
-      unawaited(Future(() async {
-        final jobId = await dao.insertJob(TransferJobsCompanion(
-          peerName: Value(peerName),
-          peerIp: const Value(''),
-          fileName: Value(fileName),
-          fileSize: Value(fileSize),
-          direction: const Value('receive'),
-          status: const Value('active'),
-          startedAt: Value(DateTime.now().millisecondsSinceEpoch),
-        ));
-        TransferOrchestrator.instance.addJob(TransferJobEntity(
-          id: jobId,
-          peerName: peerName,
-          peerIp: '',
-          fileName: fileName,
-          fileSize: fileSize,
-          direction: TransferDirection.receive,
-          status: TransferStatus.active,
-          startedAt: DateTime.now().millisecondsSinceEpoch,
-        ));
-        _log.i(
-            'Receiving "$fileName" ($fileSize bytes) from $peerName [job=$jobId]');
-        onIncomingTransfer?.call();
-      }));
+      final jobId = await dao.insertJob(TransferJobsCompanion(
+        peerName: Value(peerName),
+        peerIp: const Value(''),
+        fileName: Value(fileName),
+        fileSize: Value(fileSize),
+        direction: const Value('receive'),
+        status: const Value('active'),
+        startedAt: Value(DateTime.now().millisecondsSinceEpoch),
+      ));
+      TransferOrchestrator.instance.addJob(TransferJobEntity(
+        id: jobId,
+        peerName: peerName,
+        peerIp: '',
+        fileName: fileName,
+        fileSize: fileSize,
+        direction: TransferDirection.receive,
+        status: TransferStatus.active,
+        startedAt: DateTime.now().millisecondsSinceEpoch,
+      ));
+      _log.i(
+          'Receiving "$fileName" ($fileSize bytes) from $peerName [job=$jobId]');
+      onIncomingTransfer?.call();
       return true;
     };
 
@@ -145,37 +143,33 @@ class TransferRepositoryImpl implements TransferRepository {
     };
 
     // Wire up socket server callbacks.
-    // Accept immediately and do DB/UI work in the background so the
-    // handshake ACK is not delayed.
     server.socketServer.onTransferOffer = (token, files) async {
-      unawaited(Future(() async {
-        for (final entry in files) {
-          final jobId = await dao.insertJob(TransferJobsCompanion(
-            peerName: const Value('Peer'),
-            peerIp: const Value(''),
-            fileName: Value(entry.fileName),
-            fileSize: Value(entry.fileSize),
-            direction: const Value('receive'),
-            status: const Value('active'),
-            startedAt: Value(DateTime.now().millisecondsSinceEpoch),
-            totalChunks: Value(
-                (entry.fileSize + AppConstants.transferChunkBytes - 1) ~/
-                    AppConstants.transferChunkBytes),
-            sessionId: Value(token),
-          ));
-          TransferOrchestrator.instance.addJob(TransferJobEntity(
-            id: jobId,
-            peerName: 'Peer',
-            peerIp: '',
-            fileName: entry.fileName,
-            fileSize: entry.fileSize,
-            direction: TransferDirection.receive,
-            status: TransferStatus.active,
-            startedAt: DateTime.now().millisecondsSinceEpoch,
-          ));
-        }
-        onIncomingTransfer?.call();
-      }));
+      for (final entry in files) {
+        final jobId = await dao.insertJob(TransferJobsCompanion(
+          peerName: const Value('Peer'),
+          peerIp: const Value(''),
+          fileName: Value(entry.fileName),
+          fileSize: Value(entry.fileSize),
+          direction: const Value('receive'),
+          status: const Value('active'),
+          startedAt: Value(DateTime.now().millisecondsSinceEpoch),
+          totalChunks: Value(
+              (entry.fileSize + AppConstants.transferChunkBytes - 1) ~/
+                  AppConstants.transferChunkBytes),
+          sessionId: Value(token),
+        ));
+        TransferOrchestrator.instance.addJob(TransferJobEntity(
+          id: jobId,
+          peerName: 'Peer',
+          peerIp: '',
+          fileName: entry.fileName,
+          fileSize: entry.fileSize,
+          direction: TransferDirection.receive,
+          status: TransferStatus.active,
+          startedAt: DateTime.now().millisecondsSinceEpoch,
+        ));
+      }
+      onIncomingTransfer?.call();
       return true;
     };
 
